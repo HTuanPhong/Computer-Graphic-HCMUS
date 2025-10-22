@@ -10,21 +10,35 @@ option(GLFW_INSTALL "Generate installation target" OFF)
 add_subdirectory(${GLFW_DIR})
 include_directories(${GLFW_DIR}/include)
 
-# GLAD
-set(GLAD_DIR ./src/vendors/glad)
-include_directories(${GLAD_DIR}/include)
-
 # GLM
 set(GLM_DIR ./src/vendors/glm)
 add_subdirectory(${GLM_DIR})
 
+# GLAD
+set(GLAD_DIR ./src/vendors/glad)
+include_directories(${GLAD_DIR}/include)
+set(GLAD_SOURCES ${GLAD_DIR}/src/glad.c)
 
-file(GLOB SOURCES "src/*.c" "src/*.cpp")
+# IMGUI
+set(IMGUI_DIR ./src/vendors/imgui)
+set(LIB_SOURCES
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_demo.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+)
+include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
+
+file(GLOB SOURCES "src/*.cpp")
 set(TARGET_NAME cg)
-add_executable(${TARGET_NAME} ${SOURCES} "./src/vendors/glad/src/glad.c")
-set_target_properties(${TARGET_NAME} PROPERTIES WIN32_EXECUTABLE OFF)
+add_executable(${TARGET_NAME} ${SOURCES} ${LIB_SOURCES} ${GLAD_SOURCES})
+if(WIN32)
+    target_link_options(${TARGET_NAME} PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup)
+endif()
 target_link_libraries(${TARGET_NAME} PRIVATE glm glfw)
-
 
 add_custom_target(
     "run-${TARGET_NAME}"
