@@ -6,24 +6,7 @@
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
 
-// Vertex Shader source code
-const char* vertexShaderSource = "#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"uniform float size;\n"
-"void main()\n"
-"{\n"
-"   gl_Position = vec4(size * aPos.x, size * aPos.y, size * aPos.z, 1.0);\n"
-"}\0";
-//Fragment Shader source code
-const char* fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"uniform vec4 color;\n"
-"void main()\n"
-"{\n"
-"   FragColor = color;\n"
-"}\n\0";
-
-
+#include "Shader.h"
 
 int main()
 {
@@ -58,33 +41,10 @@ int main()
 	glViewport(0, 0, 800, 800);
     glEnable(GL_MULTISAMPLE);
 
-	// Create Vertex Shader Object and get its reference
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	// Attach Vertex Shader source to the Vertex Shader Object
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	// Compile the Vertex Shader into machine code
-	glCompileShader(vertexShader);
-
-	// Create Fragment Shader Object and get its reference
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	// Attach Fragment Shader source to the Fragment Shader Object
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	// Compile the Vertex Shader into machine code
-	glCompileShader(fragmentShader);
-
-	// Create Shader Program Object and get its reference
-	GLuint shaderProgram = glCreateProgram();
-	// Attach the Vertex and Fragment Shaders to the Shader Program
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	// Wrap-up/Link all the shaders together into the Shader Program
-	glLinkProgram(shaderProgram);
-
-	// Delete the now useless Vertex and Fragment Shader objects
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-
+	Shader shaderProgram = Shader(
+		"shaders/vertex.glsl", "shaders/fragment.glsl",
+		"../src/shaders/vertex.glsl", "../src/shaders/fragment.glsl"
+	);
 
 	// Vertices coordinates
 	GLfloat vertices[] =
@@ -134,9 +94,9 @@ int main()
 	float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
 
 	// Exporting variables to shaders
-	glUseProgram(shaderProgram);
-	glUniform1f(glGetUniformLocation(shaderProgram, "size"), size);
-	glUniform4f(glGetUniformLocation(shaderProgram, "color"), color[0], color[1], color[2], color[3]);
+	shaderProgram.activateProgram();
+	glUniform1f(glGetUniformLocation(shaderProgram.ID, "size"), size);
+	glUniform4f(glGetUniformLocation(shaderProgram.ID, "color"), color[0], color[1], color[2], color[3]);
 
     constexpr float MAX_FPS = 60.f;
     constexpr float FRAME_TIME = 1.f / MAX_FPS;
@@ -166,7 +126,7 @@ int main()
         
 
         // Tell OpenGL which Shader Program we want to use
-        glUseProgram(shaderProgram);
+        shaderProgram.activateProgram();
         // Bind the VAO so OpenGL knows to use it
         glBindVertexArray(VAO);
         // Only draw the triangle if the ImGUI checkbox is ticked
@@ -188,9 +148,9 @@ int main()
         ImGui::End();
 
         // Export variables to shader
-        glUseProgram(shaderProgram);
-        glUniform1f(glGetUniformLocation(shaderProgram, "size"), size);
-        glUniform4f(glGetUniformLocation(shaderProgram, "color"), color[0], color[1], color[2], color[3]);
+        shaderProgram.activateProgram();
+        glUniform1f(glGetUniformLocation(shaderProgram.ID, "size"), size);
+        glUniform4f(glGetUniformLocation(shaderProgram.ID, "color"), color[0], color[1], color[2], color[3]);
 
         // Renders the ImGUI elements
         ImGui::Render();
@@ -210,7 +170,7 @@ int main()
 	// Delete all the objects we've created
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteProgram(shaderProgram);
+	shaderProgram.deleteProgram();
 	// Delete window before ending the program
 	glfwDestroyWindow(window);
 	// Terminate GLFW before ending the program

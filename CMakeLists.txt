@@ -32,9 +32,16 @@ set(LIB_SOURCES
 )
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
 
-file(GLOB SOURCES "src/*.cpp")
+file(GLOB SOURCES "src/*.cpp" "src/*.h")
 set(TARGET_NAME cg)
 add_executable(${TARGET_NAME} ${SOURCES} ${LIB_SOURCES} ${GLAD_SOURCES})
+
+add_custom_command(TARGET cg POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/src/shaders"
+    "$<TARGET_FILE_DIR:cg>/shaders"
+)
+
 if(WIN32)
     target_link_options(${TARGET_NAME} PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup)
 endif()
