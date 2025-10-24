@@ -1,12 +1,15 @@
-#include"imgui.h"
-#include"imgui_impl_glfw.h"
-#include"imgui_impl_opengl3.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
-#include<iostream>
-#include<glad/glad.h>
-#include<GLFW/glfw3.h>
+#include <iostream>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #include "Shader.h"
+#include "VAO.h"
+#include "VBO.h"
+#include "EBO.h"
 
 int main()
 {
@@ -54,29 +57,18 @@ int main()
 		0.0f, 0.5f * float(sqrt(3)) * 2 / 3, 0.0f // Upper corner
 	};
 
-	// Create reference containers for the Vartex Array Object and the Vertex Buffer Object
-	GLuint VAO, VBO;
+	// Generates Vertex Array Object and binds it
+	VAO VAO1;
+	VAO1.bind();
 
-	// Generate the VAO and VBO with only 1 object each
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
+	// Generates Vertex Buffer Object and links it to vertices
+	VBO VBO1(vertices, sizeof(vertices));
 
-	// Make the VAO the current Vertex Array Object by binding it
-	glBindVertexArray(VAO);
-
-	// Bind the VBO specifying it's a GL_ARRAY_BUFFER
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	// Introduce the vertices into the VBO
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// Configure the Vertex Attribute so that OpenGL knows how to read the VBO
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	// Enable the Vertex Attribute so that OpenGL knows to use it
-	glEnableVertexAttribArray(0);
-
-	// Bind both the VBO and VAO to 0 so that we don't accidentally modify the VAO and VBO we created
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	// Links VBO to VAO
+	VAO1.linkVBO(VBO1, 0);
+	// Unbind all to prevent accidentally modifying them
+	VAO1.unbind();
+	VBO1.unbind();
 
 	// Initialize ImGUI
 	IMGUI_CHECKVERSION();
@@ -128,7 +120,7 @@ int main()
         // Tell OpenGL which Shader Program we want to use
         shaderProgram.activateProgram();
         // Bind the VAO so OpenGL knows to use it
-        glBindVertexArray(VAO);
+        VAO1.bind();
         // Only draw the triangle if the ImGUI checkbox is ticked
         if (drawTriangle)
             // Draw the triangle using the GL_TRIANGLES primitive
@@ -168,8 +160,8 @@ int main()
 	ImGui::DestroyContext();
 
 	// Delete all the objects we've created
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
+	VAO1.deleteObject();
+	VBO1.deleteObject();
 	shaderProgram.deleteProgram();
 	// Delete window before ending the program
 	glfwDestroyWindow(window);

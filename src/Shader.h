@@ -9,10 +9,12 @@
 class Shader
 {
 public:
+    // Reference ID of the Shader Program
     GLuint ID;
     
-    Shader() = default;
+    // Constructor that build the Shader Program from 2 different shaders
     Shader(const char* vertexFile, const char* fragmentFile, const char* fallbackVertexFile = nullptr, const char* fallbackFragmentFile = nullptr);
+    
     void activateProgram();
     void deleteProgram();
 };
