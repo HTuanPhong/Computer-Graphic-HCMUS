@@ -5,6 +5,10 @@
 #include<iostream>
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include<vector>
 
 // Vertex Shader source code
 const char* vertexShaderSource = "#version 330 core\n"
@@ -37,10 +41,9 @@ int main()
 	// Tell GLFW we are using the CORE profile
 	// So that means we only have the modern functions
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_SAMPLES, 8);
 
 	// Create a GLFWwindow object of 800 by 800 pixels, naming it "YoutubeOpenGL"
-	GLFWwindow* window = glfwCreateWindow(800, 800, "HELLO HELLOOOOOOO", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(800, 800, "ImGui + GLFW", NULL, NULL);
 	// Error check if the window fails to create
 	if (window == NULL)
 	{
@@ -56,7 +59,8 @@ int main()
 	// Specify the viewport of OpenGL in the Window
 	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
 	glViewport(0, 0, 800, 800);
-    glEnable(GL_MULTISAMPLE);
+
+
 
 	// Create Vertex Shader Object and get its reference
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -121,9 +125,7 @@ int main()
 	// Initialize ImGUI
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); 
-    io.IniFilename = nullptr;
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
@@ -138,68 +140,56 @@ int main()
 	glUniform1f(glGetUniformLocation(shaderProgram, "size"), size);
 	glUniform4f(glGetUniformLocation(shaderProgram, "color"), color[0], color[1], color[2], color[3]);
 
-    constexpr float MAX_FPS = 60.f;
-    constexpr float FRAME_TIME = 1.f / MAX_FPS;
-
-    float last_time = glfwGetTime();
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
-        float current_time = glfwGetTime();
-        float dt = current_time - last_time;
-        last_time = current_time;
+		// Specify the color of the background
+		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		// Clean the back buffer and assign the new color to it
+		glClear(GL_COLOR_BUFFER_BIT);
 
-        if (dt < FRAME_TIME) {
-            ImGui_ImplGlfw_Sleep((FRAME_TIME - dt) * 1000);
-        }
+		// Tell OpenGL a new frame is about to begin
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
 
-        // Specify the color of the background
-        glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-        // Clean the back buffer and assign the new color to it
-        glClear(GL_COLOR_BUFFER_BIT);
+		
 
-        // Tell OpenGL a new frame is about to begin
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-				ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
-        
+		// Tell OpenGL which Shader Program we want to use
+		glUseProgram(shaderProgram);
+		// Bind the VAO so OpenGL knows to use it
+		glBindVertexArray(VAO);
+		// Only draw the triangle if the ImGUI checkbox is ticked
+		if (drawTriangle)
+			// Draw the triangle using the GL_TRIANGLES primitive
+			glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        // Tell OpenGL which Shader Program we want to use
-        glUseProgram(shaderProgram);
-        // Bind the VAO so OpenGL knows to use it
-        glBindVertexArray(VAO);
-        // Only draw the triangle if the ImGUI checkbox is ticked
-        if (drawTriangle)
-            // Draw the triangle using the GL_TRIANGLES primitive
-            glDrawArrays(GL_TRIANGLES, 0, 3);
+		// ImGUI window creation
+		ImGui::Begin("My name is window, ImGUI window");
+		// Text that appears in the window
+		ImGui::Text("Hello there adventurer!");
+		// Checkbox that appears in the window
+		ImGui::Checkbox("Draw Triangle", &drawTriangle);
+		// Slider that appears in the window
+		ImGui::SliderFloat("Size", &size, 0.5f, 2.0f);
+		// Fancy color editor that appears in the window
+		ImGui::ColorEdit4("Color", color);
+		// Ends the window
+		ImGui::End();
 
-        // ImGUI window creation
-        ImGui::Begin("My name is window, ImGUI window");
-        // Text that appears in the window
-        ImGui::Text("Hello there adventurer!");
-        // Checkbox that appears in the window
-        ImGui::Checkbox("Draw Triangle", &drawTriangle);
-        // Slider that appears in the window
-        ImGui::SliderFloat("Size", &size, 0.5f, 2.0f);
-        // Fancy color editor that appears in the window
-        ImGui::ColorEdit4("Color", color);
-        // Ends the window
-        ImGui::End();
+		// Export variables to shader
+		glUseProgram(shaderProgram);
+		glUniform1f(glGetUniformLocation(shaderProgram, "size"), size);
+		glUniform4f(glGetUniformLocation(shaderProgram, "color"), color[0], color[1], color[2], color[3]);
 
-        // Export variables to shader
-        glUseProgram(shaderProgram);
-        glUniform1f(glGetUniformLocation(shaderProgram, "size"), size);
-        glUniform4f(glGetUniformLocation(shaderProgram, "color"), color[0], color[1], color[2], color[3]);
+		// Renders the ImGUI elements
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // Renders the ImGUI elements
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // Swap the back buffer with the front buffer
-        glfwSwapBuffers(window);
-        // Take care of all GLFW events
-        glfwPollEvents();
+		// Swap the back buffer with the front buffer
+		glfwSwapBuffers(window);
+		// Take care of all GLFW events
+		glfwPollEvents();
 	}
 
 	// Deletes all ImGUI instances

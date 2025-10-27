@@ -1,0 +1,4 @@
+struct App
+{
+	bool shouldCopyPass;
+};

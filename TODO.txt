@@ -1,0 +1,22 @@
+Camera (orthogonal, perspective)
+V
+Sphere mesh, cylinder mesh, cone mesh, line cylinder mesh, surface. | Text rendering
+V
+Dashed line | Line, Ray | Plane | circle line,cylinder line | Axis gizmo | Angle
+V
+Phong shading | Drawing tool (UI)
+V
+Tool (3D)
+
+
+
+
+Point, Mid point
+
+Segment, Line, Ray, (Vector?)
+
+Circle, Triangle
+
+Plane, Surface
+
+Sphere, Cylinder, Cone

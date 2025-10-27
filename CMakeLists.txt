@@ -13,6 +13,7 @@ include_directories(${GLFW_DIR}/include)
 # GLM
 set(GLM_DIR ./src/vendors/glm)
 add_subdirectory(${GLM_DIR})
+include_directories(${GLM_DIR})
 
 # GLAD
 set(GLAD_DIR ./src/vendors/glad)
