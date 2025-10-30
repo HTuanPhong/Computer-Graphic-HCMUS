@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.26)
 project(computer_graphic_hcmus C CXX)
 
 # GLFW
@@ -33,6 +33,7 @@ set(LIB_SOURCES
 )
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
 
+# binary target
 file(GLOB SOURCES "src/*.cpp")
 set(TARGET_NAME cg)
 add_executable(${TARGET_NAME} ${SOURCES} ${LIB_SOURCES} ${GLAD_SOURCES})
@@ -41,9 +42,23 @@ if(WIN32)
 endif()
 target_link_libraries(${TARGET_NAME} PRIVATE glm glfw)
 
+
+# copy target
+add_custom_target(
+    "copy-${TARGET_NAME}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets
+            $<TARGET_FILE_DIR:${TARGET_NAME}>/assets
+    COMMENT "Copying ${TARGET_NAME} assets after build"
+)
+add_dependencies(${TARGET_NAME} "copy-${TARGET_NAME}")
+
+
+# run target
 add_custom_target(
     "run-${TARGET_NAME}"
-    COMMAND $<TARGET_FILE:${TARGET_NAME}>
+    COMMAND ${CMAKE_COMMAND} -E chdir $<TARGET_FILE_DIR:${TARGET_NAME}>
+            $<TARGET_FILE:${TARGET_NAME}>
     DEPENDS ${TARGET_NAME}
-    COMMENT "Running ${TARGET_NAME}."
+    COMMENT "Running ${TARGET_NAME} in $<TARGET_FILE_DIR:${TARGET_NAME}>"
 )
