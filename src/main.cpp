@@ -11,56 +11,21 @@
 #include<vector>
 
 #include "App.hpp"
-
-// Vertex Shader source code
-const char* vertexShaderSource = "#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"uniform float size;\n"
-"void main()\n"
-"{\n"
-"   gl_Position = vec4(size * aPos.x, size * aPos.y, size * aPos.z, 1.0);\n"
-"}\0";
-//Fragment Shader source code
-const char* fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"uniform vec4 color;\n"
-"void main()\n"
-"{\n"
-"   FragColor = color;\n"
-"}\n\0";
+#include "Shader.hpp"
 
 App g_app = {};
 
 int main()
 {
-	AppInit("HCMUS - GEOMETRY APP", 800, 800);
-	// Create Vertex Shader Object and get its reference
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	// Attach Vertex Shader source to the Vertex Shader Object
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	// Compile the Vertex Shader into machine code
-	glCompileShader(vertexShader);
+	if (!AppInit("HCMUS - GEOMETRY APP", 800, 800)) {
+		return 1;
+	}
 
-	// Create Fragment Shader Object and get its reference
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	// Attach Fragment Shader source to the Fragment Shader Object
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	// Compile the Vertex Shader into machine code
-	glCompileShader(fragmentShader);
-
-	// Create Shader Program Object and get its reference
-	GLuint shaderProgram = glCreateProgram();
-	// Attach the Vertex and Fragment Shaders to the Shader Program
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	// Wrap-up/Link all the shaders together into the Shader Program
-	glLinkProgram(shaderProgram);
-
-	// Delete the now useless Vertex and Fragment Shader objects
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-
+	// Create Shader Program Object
+	GLuint shaderProgram;
+	if (!CreateShaderProgram("assets/shaders/triangle.vert", "assets/shaders/triangle.frag", &shaderProgram)) {
+		return 1;
+	}
 
 	// Vertices coordinates
 	GLfloat vertices[] =
@@ -108,10 +73,6 @@ int main()
 	while (AppRunning())
 	{
 		AppFrameBegin();
-		// Specify the color of the background
-		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-		// Clean the back buffer and assign the new color to it
-		glClear(GL_COLOR_BUFFER_BIT);
 
 		// Tell OpenGL which Shader Program we want to use
 		glUseProgram(shaderProgram);
@@ -134,6 +95,14 @@ int main()
 		// Ends the window
 		ImGui::End();
 
+		ImGui::Begin("Vietnamese language test");
+		ImGui::Text("“Gạo đem vào giã bao đau đớn,\n"
+								"Gạo giã xong rồi, trắng tựa bông.\n"
+								"Sống ở trên đời người cũng vậy:\n"
+								"Gian nan rèn luyện mới thành công”.\n"
+								"                      -Nguyễn Ái Quốc-");
+		ImGui::End();
+
 		ImGui::Begin("Performance"); 
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		ImGui::End();
@@ -142,7 +111,8 @@ int main()
 		glUseProgram(shaderProgram);
 		glUniform1f(glGetUniformLocation(shaderProgram, "size"), size);
 		glUniform4f(glGetUniformLocation(shaderProgram, "color"), color[0], color[1], color[2], color[3]);
-
+		ProcessCameraInputs(&g_app.camera, g_app.window);
+		SendCameraMatrix(&g_app.camera, shaderProgram, "camera");
 		AppFrameEnd();
 	}
 
