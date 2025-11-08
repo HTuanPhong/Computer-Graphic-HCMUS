@@ -1,8 +1,13 @@
 #version 330 core
 layout (location = 0) in vec3 aPos;
-uniform float size;
+layout (location = 1) in vec4 aColor;
+
+// Passed to the fragment shader
+out vec4 vColor;
+
 uniform mat4 camera;
 void main()
 {
-  gl_Position = camera * vec4(size * aPos.x, size * aPos.y, size * aPos.z, 1.0);
+  vColor = aColor;
+  gl_Position = camera * vec4(aPos, 1.0);
 }

@@ -20,3 +20,8 @@ Circle, Triangle
 Plane, Surface
 
 Sphere, Cylinder, Cone
+
+
+The game style camera was a failure go back to orbit camera!
+
+Maybe camera inside app is not good idea but no reason to not right now.

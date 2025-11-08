@@ -23,7 +23,7 @@ void framebufferSizeCallbackglfw(GLFWwindow* window, int width, int height)
 
 void scrollCallbackglfw(GLFWwindow* window, double xoffset, double yoffset)
 {
-  ProcessCameraZoom(&g_app.camera, yoffset);
+  ProcessOrbitZoom(&g_app.camera, (float)yoffset);
 }
 
 static void ClampAllImGuiWindows()
@@ -170,7 +170,7 @@ bool AppInit(const char *name, int width, int height) {
   ImGui_ImplGlfw_InitForOpenGL(g_app.window, true);
   ImGui_ImplOpenGL3_Init("#version 330");
 
-  g_app.camera = CreateCamera(glm::vec3(0.0f, 0.0f, 3.0f),glm::vec3(0.0f, 1.0f, 0.0f),glm::vec3(0.0f, 0.0f, -1.0f),width,height);
+  g_app.camera = CreateOrbitCamera(glm::vec3(0.0f, 0.0f, 0.0f),5,width,height);
   return 1;
 }
 
@@ -190,11 +190,11 @@ bool AppRunning() {
 }
 
 void AppFrameBegin() {
+  glfwWaitEvents();
   float currentFrameTime = static_cast<float>(glfwGetTime());
   g_app.deltaTime = currentFrameTime - g_app.lastFrameTime;
   g_app.lastFrameTime = currentFrameTime;
   // Take care of all GLFW events
-  glfwPollEvents();
   // Specify the color of the background
   glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
   // Clean the back buffer and assign the new color to it
@@ -203,7 +203,6 @@ void AppFrameBegin() {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
-  ImGui::ShowDemoWindow();
 }
 
 void AppFrameEnd() {

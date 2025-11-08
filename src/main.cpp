@@ -11,7 +11,7 @@
 #include<vector>
 
 #include "App.hpp"
-#include "Shader.hpp"
+#include "Render.hpp"
 
 App g_app = {};
 
@@ -21,79 +21,68 @@ int main()
 		return 1;
 	}
 
-	// Create Shader Program Object
-	GLuint shaderProgram;
-	if (!CreateShaderProgram("assets/shaders/triangle.vert", "assets/shaders/triangle.frag", &shaderProgram)) {
+	Renderer renderer;
+	if (!Renderer_Init(&renderer, 1024)) {
 		return 1;
 	}
-
-	// Vertices coordinates
-	GLfloat vertices[] =
-	{
-		-0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f, // Lower left corner
-		0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f, // Lower right corner
-		0.0f, 0.5f * float(sqrt(3)) * 2 / 3, 0.0f // Upper corner
-	};
-
-	// Create reference containers for the Vartex Array Object and the Vertex Buffer Object
-	GLuint VAO, VBO;
-
-	// Generate the VAO and VBO with only 1 object each
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	// Make the VAO the current Vertex Array Object by binding it
-	glBindVertexArray(VAO);
-
-	// Bind the VBO specifying it's a GL_ARRAY_BUFFER
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	// Introduce the vertices into the VBO
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// Configure the Vertex Attribute so that OpenGL knows how to read the VBO
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	// Enable the Vertex Attribute so that OpenGL knows to use it
-	glEnableVertexAttribArray(0);
-
-	// Bind both the VBO and VAO to 0 so that we don't accidentally modify the VAO and VBO we created
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
-	// Variables to be changed in the ImGUI window
-	bool drawTriangle = true;
-	float size = 1.0f;
-	float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
-
-	// Exporting variables to shaders
-	glUseProgram(shaderProgram);
-	glUniform1f(glGetUniformLocation(shaderProgram, "size"), size);
-	glUniform4f(glGetUniformLocation(shaderProgram, "color"), color[0], color[1], color[2], color[3]);
+	bool ortho = false;
 
 	// Main while loop
 	while (AppRunning())
 	{
 		AppFrameBegin();
+		Renderer_Begin(&renderer);
+		Vertex cube[] = {
+				// Front (red)
+				{ -0.5f, -0.5f,  0.5f, 255,   0,   0, 255 },
+				{  0.5f, -0.5f,  0.5f, 255,   0,   0, 255 },
+				{  0.5f,  0.5f,  0.5f, 255,   0,   0, 255 },
+				{  0.5f,  0.5f,  0.5f, 255,   0,   0, 255 },
+				{ -0.5f,  0.5f,  0.5f, 255,   0,   0, 255 },
+				{ -0.5f, -0.5f,  0.5f, 255,   0,   0, 255 },
 
-		// Tell OpenGL which Shader Program we want to use
-		glUseProgram(shaderProgram);
-		// Bind the VAO so OpenGL knows to use it
-		glBindVertexArray(VAO);
-		// Only draw the triangle if the ImGUI checkbox is ticked
-		if (drawTriangle)
-			// Draw the triangle using the GL_TRIANGLES primitive
-			glDrawArrays(GL_TRIANGLES, 0, 3);
-		// ImGUI window creation
-		ImGui::Begin("My name is window, ImGUI window");
-		// Text that appears in the window
-		ImGui::Text("Hello there adventurer!");
-		// Checkbox that appears in the window
-		ImGui::Checkbox("Draw Triangle", &drawTriangle);
-		// Slider that appears in the window
-		ImGui::SliderFloat("Size", &size, 0.5f, 2.0f);
-		// Fancy color editor that appears in the window
-		ImGui::ColorEdit4("Color", color);
-		// Ends the window
-		ImGui::End();
+				// Back (green)
+				{ -0.5f, -0.5f, -0.5f,   0, 255,   0, 255 },
+				{  0.5f, -0.5f, -0.5f,   0, 255,   0, 255 },
+				{  0.5f,  0.5f, -0.5f,   0, 255,   0, 255 },
+				{  0.5f,  0.5f, -0.5f,   0, 255,   0, 255 },
+				{ -0.5f,  0.5f, -0.5f,   0, 255,   0, 255 },
+				{ -0.5f, -0.5f, -0.5f,   0, 255,   0, 255 },
+
+				// Left (blue)
+				{ -0.5f, -0.5f, -0.5f,   0,   0, 255, 255 },
+				{ -0.5f, -0.5f,  0.5f,   0,   0, 255, 255 },
+				{ -0.5f,  0.5f,  0.5f,   0,   0, 255, 255 },
+				{ -0.5f,  0.5f,  0.5f,   0,   0, 255, 255 },
+				{ -0.5f,  0.5f, -0.5f,   0,   0, 255, 255 },
+				{ -0.5f, -0.5f, -0.5f,   0,   0, 255, 255 },
+
+				// Right (yellow)
+				{  0.5f, -0.5f, -0.5f, 255, 255,   0, 255 },
+				{  0.5f, -0.5f,  0.5f, 255, 255,   0, 255 },
+				{  0.5f,  0.5f,  0.5f, 255, 255,   0, 255 },
+				{  0.5f,  0.5f,  0.5f, 255, 255,   0, 255 },
+				{  0.5f,  0.5f, -0.5f, 255, 255,   0, 255 },
+				{  0.5f, -0.5f, -0.5f, 255, 255,   0, 255 },
+
+				// Top (cyan)
+				{ -0.5f,  0.5f, -0.5f,   0, 255, 255, 255 },
+				{  0.5f,  0.5f, -0.5f,   0, 255, 255, 255 },
+				{  0.5f,  0.5f,  0.5f,   0, 255, 255, 255 },
+				{  0.5f,  0.5f,  0.5f,   0, 255, 255, 255 },
+				{ -0.5f,  0.5f,  0.5f,   0, 255, 255, 255 },
+				{ -0.5f,  0.5f, -0.5f,   0, 255, 255, 255 },
+
+				// Bottom (magenta)
+				{ -0.5f, -0.5f, -0.5f, 255,   0, 255, 255 },
+				{  0.5f, -0.5f, -0.5f, 255,   0, 255, 255 },
+				{  0.5f, -0.5f,  0.5f, 255,   0, 255, 255 },
+				{  0.5f, -0.5f,  0.5f, 255,   0, 255, 255 },
+				{ -0.5f, -0.5f,  0.5f, 255,   0, 255, 255 },
+				{ -0.5f, -0.5f, -0.5f, 255,   0, 255, 255 },
+		};
+
+		Renderer_PushVertices(&renderer, cube, 36);
 
 		ImGui::Begin("Vietnamese language test");
 		ImGui::Text("“Gạo đem vào giã bao đau đớn,\n"
@@ -103,23 +92,23 @@ int main()
 								"                      -Nguyễn Ái Quốc-");
 		ImGui::End();
 
+		ImGui::Begin("Camera");
+		ImGui::Checkbox("Ortho", &ortho);
+		ImGui::End();
+
 		ImGui::Begin("Performance"); 
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 		ImGui::End();
 
 		// Export variables to shader
-		glUseProgram(shaderProgram);
-		glUniform1f(glGetUniformLocation(shaderProgram, "size"), size);
-		glUniform4f(glGetUniformLocation(shaderProgram, "color"), color[0], color[1], color[2], color[3]);
-		ProcessCameraInputs(&g_app.camera, g_app.window);
-		SendCameraMatrix(&g_app.camera, shaderProgram, "camera");
+		ProcessOrbitCamera(&g_app.camera, g_app.window);
+		SendCameraMatrix(&g_app.camera, renderer.shaderProgram, "camera", ortho);
+		Renderer_End(&renderer);
 		AppFrameEnd();
 	}
 
-	// Delete all the objects we've created
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
-	glDeleteProgram(shaderProgram);
+	// Cleanup
+	Renderer_Destroy(&renderer);
 	AppClose();
 	return 0;
 }
