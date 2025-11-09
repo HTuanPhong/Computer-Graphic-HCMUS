@@ -7,6 +7,7 @@
 
 struct Vertex {
   float x, y, z;
+  float nx, ny, nz; // Normal vector
   unsigned char r, g, b, a;
 };
 

@@ -16,10 +16,17 @@ bool Renderer_Init(Renderer* r, size_t initialVertexCap)
   glBufferData(GL_ARRAY_BUFFER, r->capacity * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
 
   GLsizei stride = sizeof(Vertex);
-  glEnableVertexAttribArray(0); // position
+  // Position attribute
+  glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, x));
-  glEnableVertexAttribArray(1); // color
-  glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (void*)offsetof(Vertex, r));
+
+  // Normal attribute
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, nx));
+
+  // Color attribute
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (void*)offsetof(Vertex, r));
 
   glBindVertexArray(0);
   if (!CreateShaderProgram("assets/shaders/triangle.vert", "assets/shaders/triangle.frag", &(r->shaderProgram))) {
@@ -40,8 +47,14 @@ void Renderer_Destroy(Renderer* r)
 
 void Renderer_Begin(Renderer* r)
 {
+  // Specify the color of the background
+  glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+  // Clean the back buffer and assign the new color to it
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glUseProgram(r->shaderProgram);
   glBindVertexArray(r->vao);
+  // global depth test state
+  glEnable(GL_DEPTH_TEST);
   r->buf.clear();
 }
 

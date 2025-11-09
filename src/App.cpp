@@ -151,8 +151,6 @@ bool AppInit(const char *name, int width, int height) {
       ErrLog("Failed to initialize GLAD");
       return 0;
   }
-  // global depth test state
-  glEnable(GL_DEPTH_TEST);
 
   // Initialize ImGUI
   IMGUI_CHECKVERSION();
@@ -169,7 +167,7 @@ bool AppInit(const char *name, int width, int height) {
   ImGui::StyleColorsDark();
   ImGui_ImplGlfw_InitForOpenGL(g_app.window, true);
   ImGui_ImplOpenGL3_Init("#version 330");
-
+  
   g_app.camera = CreateOrbitCamera(glm::vec3(0.0f, 0.0f, 0.0f),5,width,height);
   return 1;
 }
@@ -195,10 +193,6 @@ void AppFrameBegin() {
   g_app.deltaTime = currentFrameTime - g_app.lastFrameTime;
   g_app.lastFrameTime = currentFrameTime;
   // Take care of all GLFW events
-  // Specify the color of the background
-  glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-  // Clean the back buffer and assign the new color to it
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   // Tell OpenGL a new frame is about to begin
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
