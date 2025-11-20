@@ -19,7 +19,7 @@ struct Camera
 };
 
 Camera CreateOrbitCamera(glm::vec3 target, float distance, int width, int height);
-void SendCameraMatrix(Camera* camera, GLuint shaderID, const char* uniform, bool ortho);
+void SendCameraMatrix(Camera* camera, GLuint shaderID, const char* uniform, float t);
 void ProcessOrbitCamera(Camera* camera, GLFWwindow* window);
 void ProcessOrbitZoom(Camera* camera, float yoffset);
 

@@ -28,19 +28,54 @@ Camera CreateOrbitCamera(glm::vec3 target, float distance, int width, int height
     return cam;
 }
 
-void SendCameraMatrix(Camera* camera, GLuint shaderID, const char* uniform, bool ortho)
+static glm::mat4 mixMat4(const glm::mat4& a, const glm::mat4& b, float t)
 {
-    glm::mat4 view = glm::lookAt(camera->position, camera->target, glm::vec3(0, 1, 0));
-    glm::mat4 projection;
+    return a * (1.0f - t) + b * t;
+}
 
+void SendCameraMatrix(Camera* camera, GLuint shaderID, const char* uniform, float t)
+{
+    t = glm::clamp(t, 0.0f, 1.0f);
+    glm::mat4 view = glm::lookAt(camera->position, camera->target, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 projection;
     float aspect = (float)camera->width / (float)camera->height;
-    if (ortho) {
-        float orthoSize = camera->distance * 0.5f;
-        projection = glm::ortho(-orthoSize * aspect, orthoSize * aspect,
-                                -orthoSize, orthoSize,
-                                0.1f, 100.0f);
+
+    // --- Define the two key matrices: Perspective and a CORRECTLY SIZED Orthographic ---
+
+    // 1. Pure Perspective Matrix (for t = 0.0)
+    float fovRadians = glm::radians(45.0f);
+    glm::mat4 perspectiveMatrix = glm::perspective(fovRadians, aspect, 0.1f, 100.0f);
+
+    // 2. Pure Orthographic Matrix (for t = 0.5)
+    //    Calculate the size of the ortho view so that it perfectly matches
+    //    the perspective view at the target distance.
+    float distanceToTarget = glm::distance(camera->position, camera->target);
+    float orthoHeight = distanceToTarget * tan(fovRadians / 2.0f);
+    float orthoWidth = orthoHeight * aspect;
+    glm::mat4 orthoMatrix = glm::ortho(-orthoWidth, orthoWidth,
+                                       -orthoHeight, orthoHeight,
+                                       0.1f, 100.0f);
+
+    if (t <= 0.5f) {
+        // --- Interpolate between Perspective and the correctly-sized Orthographic ---
+        float lerpT = t * 2.0f; 
+        projection = mixMat4(perspectiveMatrix, orthoMatrix, lerpT);
     } else {
-        projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
+        // --- Interpolate between Orthographic and Oblique ---
+        float lerpT = (t - 0.5f) * 2.0f;
+
+        // The oblique matrix is built from the same correctly-sized ortho matrix
+        float angleRad = glm::radians(30.0);
+        float sx = -0.5 * cos(angleRad);
+        float sy = -0.5 * sin(angleRad);
+        glm::mat4 shearMatrix = glm::mat4(1.0f);
+        shearMatrix[2][0] = sx;
+        shearMatrix[2][1] = sy;
+        glm::mat4 counterTranslateMatrix = glm::translate(glm::mat4(1.0f), 
+            glm::vec3(sx * distanceToTarget, sy * distanceToTarget, 0.0f));
+        glm::mat4 obliqueMatrix = orthoMatrix * shearMatrix * counterTranslateMatrix;
+        
+        projection = mixMat4(orthoMatrix, obliqueMatrix, lerpT);
     }
 
     glm::mat4 camMatrix = projection * view;

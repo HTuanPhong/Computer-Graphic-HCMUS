@@ -1,3 +1,6 @@
+#ifndef DRAW_H
+#define DRAW_H
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -43,6 +46,7 @@ struct Circle
 {
 	int midpoint;
 	int edgepoint;
+	int normpoint;
 };
 
 struct Sphere
@@ -64,3 +68,5 @@ struct Cone
 	int edgepoint;
 	int toppoint;
 };
+
+#endif

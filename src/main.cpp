@@ -83,13 +83,14 @@ void CreateCircleMesh(
  * @param color         - The color of the sphere.
  */
 void CreateSphereMesh(
-    std::vector<Vertex>& vertices,
+		Renderer *renderer,
     glm::vec3 center,
     float radius,
     int sectorCount,
     int stackCount,
     glm::u8vec4 color)
 {
+		std::vector<Vertex> vertices;
     float x, y, z, xy;                              // vertex position
     float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
 
@@ -120,7 +121,6 @@ void CreateSphereMesh(
         }
     }
 
-    // Now, generate the triangles from the vertices
     std::vector<Vertex> triangleVertices;
     int k1, k2;
     for (int i = 0; i < stackCount; ++i)
@@ -133,16 +133,16 @@ void CreateSphereMesh(
             // 2 triangles per sector excluding first and last stacks
             if (i != 0)
             {
-                triangleVertices.push_back(vertices[k1]);
-                triangleVertices.push_back(vertices[k2]);
-                triangleVertices.push_back(vertices[k1 + 1]);
+                Renderer_PushVertex(renderer,vertices[k1]);
+                Renderer_PushVertex(renderer,vertices[k2]);
+                Renderer_PushVertex(renderer,vertices[k1 + 1]);
             }
 
             if (i != (stackCount - 1))
             {
-                triangleVertices.push_back(vertices[k1 + 1]);
-                triangleVertices.push_back(vertices[k2]);
-                triangleVertices.push_back(vertices[k2 + 1]);
+                Renderer_PushVertex(renderer,vertices[k1 + 1]);
+                Renderer_PushVertex(renderer,vertices[k2]);
+                Renderer_PushVertex(renderer,vertices[k2 + 1]);
             }
         }
     }
@@ -160,17 +160,24 @@ int main()
 	if (!Renderer_Init(&renderer, 1024)) {
 		return 1;
 	}
-	bool ortho = false;
+	float projection = 0;
+	bool wireFrame = false;
 
 	// Define a light source position in world space
 	glm::vec3 lightPos(2.0f, 3.0f, 4.0f);
-	std::vector<Vertex> meshVertices;
+	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+	int trans = 255;
 	// Main while loop
 	while (AppRunning())
 	{
 		AppFrameBegin();
 		Renderer_Begin(&renderer);
-
+		if (wireFrame) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		else {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 		// A cube with normals for each face.
 		// The normals are the second set of three floats (nx, ny, nz).
 		Vertex cube[] = {
@@ -225,52 +232,33 @@ int main()
 
 		Renderer_PushVertices(&renderer, cube, 36);
 
-		meshVertices.clear();
 
 		// Sphere properties
 		glm::vec3 sphereCenter = {1.0f, 1.0f, 0.0f};
 		float sphereRadius = 1.0f;
 		int sectorCount = 36;
 		int stackCount = 18;
-		glm::u8vec4 sphereColor = {255, 0, 0, 255}; // Reddish color
+		glm::u8vec4 sphereColor = {255, 0, 0, 255/2};
 
-		CreateSphereMesh(meshVertices, sphereCenter, sphereRadius, sectorCount, stackCount, sphereColor);
-
-		Renderer_PushVertices(&renderer, meshVertices.data(), meshVertices.size());
+		// CreateSphereMesh(&renderer, sphereCenter, sphereRadius, sectorCount, stackCount, sphereColor);
+		// CreateSphereMesh(&renderer, {-0.5f, 1.0f, 0.0f}, sphereRadius, sectorCount, stackCount, {255, 255, 0, 255/2});
+		// CreateSphereMesh(&renderer, {0.0f, 1.0f, 1.0f}, sphereRadius, sectorCount, stackCount, {0, 255, 255, 255/2});
+		// CreateSphereMesh(&renderer, {0.0f, 2.0f, 0.0f}, sphereRadius, sectorCount, stackCount, {0, 255, 0, 255/2});
 		
-		ImGui::Begin("Camera");
-		ImGui::Checkbox("Ortho", &ortho);
-		ImGui::End();
-
-		ImGui::Begin("Light");
-		ImGui::DragFloat3("Light Position", glm::value_ptr(lightPos), 0.1f);
-		ImGui::End();
-
-		ImGui::Begin("Performance"); 
+		ImGui::Begin("Settings");
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+		ImGui::DragFloat3("Light Position", glm::value_ptr(lightPos), 0.1f);
+		ImGui::DragFloat3("Light Color", glm::value_ptr(lightColor), 0.01f, 0.0f, 1.0f);
+		ImGui::Checkbox("Wireframe", &wireFrame);
+		if (fabsf(projection - 0.5f) < 0.1f) projection = 0.5f;
+		ImGui::SliderFloat("Projection", &projection, 0.0f, 1.0f);
 		ImGui::End();
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  	
 
 		// Update camera logic
 		ProcessOrbitCamera(&g_app.camera, g_app.window);
-
-		// --- EXPORT ALL UNIFORMS TO SHADER ---
-		SendCameraMatrix(&g_app.camera, renderer.shaderProgram, "camera", ortho);
-
-		// Get uniform locations
-		GLint viewPosLoc = glGetUniformLocation(renderer.shaderProgram, "viewPos");
-		GLint lightPosLoc = glGetUniformLocation(renderer.shaderProgram, "lightPos");
-		GLint lightColorLoc = glGetUniformLocation(renderer.shaderProgram, "lightColor");
-
-		// Send uniform data to the shader
-		glUniform3fv(viewPosLoc, 1, glm::value_ptr(g_app.camera.position));
-		glUniform3fv(lightPosLoc, 1, glm::value_ptr(lightPos));
-		glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f); // White light
-		// --- END OF UNIFORM EXPORT ---
-
-		Renderer_End(&renderer);
+		SendCameraMatrix(&g_app.camera, renderer.shaderProgram, "camera", projection);
+		Renderer_End(&renderer, g_app.camera.position, lightPos, lightColor);
 		AppFrameEnd();
 	}
 
