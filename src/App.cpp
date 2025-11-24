@@ -164,7 +164,7 @@ bool AppInit(const char *name, int width, int height) {
   ImFont* myFont = io.Fonts->AddFontFromFileTTF("assets/fonts/TimesNewRoman.ttf");
   // change font, keep current size
   ImGui::PushFont(myFont, 24.0f);
-  ImGui::StyleColorsDark();
+  ImGui::StyleColorsLight();
   ImGui_ImplGlfw_InitForOpenGL(g_app.window, true);
   ImGui_ImplOpenGL3_Init("#version 330");
   

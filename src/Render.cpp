@@ -1,6 +1,6 @@
 #include "Render.hpp"
 #include "Shader.hpp"
-
+#include "imgui.h"
 bool Renderer_Init(Renderer* r, size_t initialVertexCap)
 {
   r->capacity = initialVertexCap;
@@ -23,9 +23,13 @@ bool Renderer_Init(Renderer* r, size_t initialVertexCap)
   glEnableVertexAttribArray(1);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, nx));
 
-  // Color attribute
+  // Texcoord attribute
   glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (void*)offsetof(Vertex, r));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, u));
+
+  // Color attribute
+  glEnableVertexAttribArray(3);
+  glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (void*)offsetof(Vertex, r));
 
   glBindVertexArray(0);
   if (!CreateShaderProgram("assets/shaders/triangle.vert", "assets/shaders/triangle.frag", &(r->shaderProgram))) {
@@ -45,10 +49,10 @@ void Renderer_Destroy(Renderer* r)
   r->transparentBuf.clear();
 }
 
-void Renderer_Begin(Renderer* r)
+void Renderer_Begin(Renderer* r, glm::vec3 backgroundColor)
 {
   // Specify the color of the background
-  glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+  glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 1.0f);
   // Clean the back buffer and assign the new color to it
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   // Set global states that are mostly constant
@@ -60,6 +64,11 @@ void Renderer_Begin(Renderer* r)
 
   glUseProgram(r->shaderProgram);
   glBindVertexArray(r->vao);
+  
+  ImFontAtlas* atlas = ImGui::GetIO().Fonts;
+  glBindTexture(GL_TEXTURE_2D, atlas->TexRef.GetTexID());
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   r->opaqueBuf.clear();
   r->transparentBuf.clear();
@@ -93,7 +102,8 @@ static void EnsureCapacity(Renderer* r, size_t needed)
   GLsizei stride = sizeof(Vertex);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, x));
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, nx));
-  glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (void*)offsetof(Vertex, r));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, u));
+  glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (void*)offsetof(Vertex, r));
 }
 
 static void DrawBuffer(Renderer* r, const std::vector<Vertex>& buf)
@@ -136,8 +146,6 @@ void Renderer_Flush(Renderer* r)
   glCullFace(GL_BACK); // Normal culling for solid objects
   glDisable(GL_CULL_FACE);
   DrawBuffer(r, r->opaqueBuf);
-
-  // draw text
 
   // If there's nothing transparent, we're done.
   if (r->transparentBuf.empty()) {

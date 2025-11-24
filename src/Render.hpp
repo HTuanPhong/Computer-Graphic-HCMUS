@@ -11,13 +11,8 @@
 struct Vertex {
   float x, y, z;
   float nx, ny, nz; // Normal vector
+  float u, v;       // Texture Coordinates
   unsigned char r, g, b, a;
-};
-
-struct TexVertex {
-    float x, y, z;
-    float u, v;       // Texture Coordinates
-    unsigned char r, g, b, a;
 };
 
 struct Renderer {
@@ -31,7 +26,7 @@ struct Renderer {
 
 bool Renderer_Init(Renderer* r, size_t initialVertexCap);
 void Renderer_Destroy(Renderer* r);
-void Renderer_Begin(Renderer* r);
+void Renderer_Begin(Renderer* r, glm::vec3 backgroundColor);
 void Renderer_PushVertices(Renderer* r, const Vertex* verts, size_t count);
 void Renderer_PushVertex(Renderer* r, Vertex v);
 void Renderer_Flush(Renderer* r);

@@ -9,6 +9,9 @@ struct Camera
 {
   glm::vec3 position;    // computed from spherical coords
   glm::vec3 target;      // usually (0,0,0)
+  glm::vec3 camRight;    // camright vec useful for text
+  glm::vec3 camUp;       // camup vec useful for text
+  glm::vec3 camFront;       // useful for text
   float distance;        // orbit radius
   float yaw;             // horizontal angle (in degrees)
   float pitch;           // vertical angle (in degrees)

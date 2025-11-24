@@ -12,144 +12,9 @@
 
 #include "App.hpp"
 #include "Render.hpp"
-
+#include "Draw.hpp"
 App g_app = {};
-
-/*
- * Creates a circle mesh made of triangles (a triangle fan).
- *
- * @param vertices      - The vector to which the generated vertices will be added.
- * @param center        - The world-space center position of the circle.
- * @param radius        - The radius of the circle.
- * @param num_segments  - The number of segments to use. More segments create a smoother circle.
- * @param color         - The color of the circle.
- */
-void CreateCircleMesh(
-    std::vector<Vertex>& vertices,
-    glm::vec3 center,
-    float radius,
-    int num_segments,
-    glm::u8vec4 color)
-{
-	// A circle must have at least 3 segments to form a triangle
-	if (num_segments < 3) return;
-
-	// The normal for a circle on the XY-plane points up along the Z-axis
-	const float normal_x = 0.0f, normal_y = 0.0f, normal_z = 1.0f;
-
-	// Define the center vertex of the fan
-	Vertex center_vert = {
-		center.x, center.y, center.z,             // Position
-		normal_x, normal_y, normal_z,             // Normal
-		color.r, color.g, color.b, color.a        // Color
-	};
-
-	// Generate a triangle for each segment
-	for (int i = 0; i < num_segments; ++i)
-	{
-		// Calculate the angle for the two points of the segment
-		float angle1 = (float)i / (float)num_segments * 2.0f * glm::pi<float>();
-		float angle2 = (float)(i + 1) / (float)num_segments * 2.0f * glm::pi<float>();
-
-		// Vertex 1 on the circumference
-		Vertex v1 = {
-			center.x + radius * cos(angle1), center.y + radius * sin(angle1), center.z,
-			normal_x, normal_y, normal_z,
-			color.r, color.g, color.b, color.a
-		};
-
-		// Vertex 2 on the circumference
-		Vertex v2 = {
-			center.x + radius * cos(angle2), center.y + radius * sin(angle2), center.z,
-			normal_x, normal_y, normal_z,
-			color.r, color.g, color.b, color.a
-		};
-
-		// Add the triangle (center, v1, v2) to the mesh vector
-		vertices.push_back(center_vert);
-		vertices.push_back(v1);
-		vertices.push_back(v2);
-	}
-}
-
-/*
- * Creates a sphere mesh made of triangles.
- *
- * @param vertices      - The vector to which the generated vertices will be added.
- * @param center        - The world-space center position of the sphere.
- * @param radius        - The radius of the sphere.
- * @param sectorCount   - The number of longitudinal divisions. Higher is smoother.
- * @param stackCount    - The number of latitudinal divisions. Higher is smoother.
- * @param color         - The color of the sphere.
- */
-void CreateSphereMesh(
-		Renderer *renderer,
-    glm::vec3 center,
-    float radius,
-    int sectorCount,
-    int stackCount,
-    glm::u8vec4 color)
-{
-		std::vector<Vertex> vertices;
-    float x, y, z, xy;                              // vertex position
-    float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
-
-    float sectorStep = 2 * glm::pi<float>() / sectorCount;
-    float stackStep = glm::pi<float>() / stackCount;
-    float sectorAngle, stackAngle;
-
-    for (int i = 0; i <= stackCount; ++i)
-    {
-        stackAngle = glm::pi<float>() / 2 - i * stackStep; // starting from pi/2 to -pi/2
-        xy = radius * cosf(stackAngle);             // r * cos(u)
-        z = center.z + radius * sinf(stackAngle);   // r * sin(u)
-
-        for (int j = 0; j <= sectorCount; ++j)
-        {
-            sectorAngle = j * sectorStep;           // starting from 0 to 2pi
-
-            // vertex position (x, y, z)
-            x = center.x + xy * cosf(sectorAngle);  // r * cos(u) * cos(v)
-            y = center.y + xy * sinf(sectorAngle);  // r * cos(u) * sin(v)
-
-            // normalized vertex normal (nx, ny, nz)
-            nx = (x - center.x) * lengthInv;
-            ny = (y - center.y) * lengthInv;
-            nz = (z - center.z) * lengthInv;
-
-            vertices.push_back({ x, y, z, nx, ny, nz, color.r, color.g, color.b, color.a });
-        }
-    }
-
-    std::vector<Vertex> triangleVertices;
-    int k1, k2;
-    for (int i = 0; i < stackCount; ++i)
-    {
-        k1 = i * (sectorCount + 1);     // beginning of current stack
-        k2 = k1 + sectorCount + 1;      // beginning of next stack
-
-        for (int j = 0; j < sectorCount; ++j, ++k1, ++k2)
-        {
-            // 2 triangles per sector excluding first and last stacks
-            if (i != 0)
-            {
-                Renderer_PushVertex(renderer,vertices[k1]);
-                Renderer_PushVertex(renderer,vertices[k2]);
-                Renderer_PushVertex(renderer,vertices[k1 + 1]);
-            }
-
-            if (i != (stackCount - 1))
-            {
-                Renderer_PushVertex(renderer,vertices[k1 + 1]);
-                Renderer_PushVertex(renderer,vertices[k2]);
-                Renderer_PushVertex(renderer,vertices[k2 + 1]);
-            }
-        }
-    }
-    // The final list of vertices for drawing
-    vertices = triangleVertices;
-}
-
+namespace ImGui { IMGUI_API void ShowFontAtlas(ImFontAtlas* atlas); }
 int main()
 {
 	if (!AppInit("HCMUS - GEOMETRY APP", 800, 800)) {
@@ -166,73 +31,80 @@ int main()
 	// Define a light source position in world space
 	glm::vec3 lightPos(2.0f, 3.0f, 4.0f);
 	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-	int trans = 255;
+	glm::vec3 backgroundColor(1.0f, 1.0f, 1.0f);
+	int textSize = 14;
+	int alpha = 255;
 	// Main while loop
 	while (AppRunning())
 	{
 		AppFrameBegin();
-		Renderer_Begin(&renderer);
+		Renderer_Begin(&renderer, backgroundColor);
 		if (wireFrame) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 		else {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
-		// A cube with normals for each face.
-		// The normals are the second set of three floats (nx, ny, nz).
+		DrawText(&renderer, &g_app.camera, "A", {-0.5f,-0.5f,-0.5f}, textSize, {0,0,0,255});
+		DrawText(&renderer, &g_app.camera, "B", {0.5f,-0.5f,-0.5f}, textSize, {0,0,0,255});
+		DrawText(&renderer, &g_app.camera, "C", {0.5f,-0.5f,0.5f}, textSize, {0,0,0,255});
+		DrawText(&renderer, &g_app.camera, "D", {-0.5f,-0.5f,0.5f}, textSize, {0,0,0,255});
+		DrawText(&renderer, &g_app.camera, "A'", {-0.5f,0.5f,-0.5f}, textSize, {0,0,0,255});
+		DrawText(&renderer, &g_app.camera, "B'", {0.5f,0.5f,-0.5f}, textSize, {0,0,0,255});
+		DrawText(&renderer, &g_app.camera, "C'", {0.5f,0.5f,0.5f}, textSize, {0,0,0,255});
+		DrawText(&renderer, &g_app.camera, "D'", {-0.5f,0.5f,0.5f}, textSize, {0,0,0,255});
+		ImVec2 white = ImGui::GetFontTexUvWhitePixel();
 		Vertex cube[] = {
 			// Front face (Normal: 0, 0, 1)
-			{ -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 255,   0,   0, 255 },
-			{  0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 255,   0,   0, 255 },
-			{  0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 255,   0,   0, 255 },
-			{  0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 255,   0,   0, 255 },
-			{ -0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 255,   0,   0, 255 },
-			{ -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 255,   0,   0, 255 },
+			{ -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
+			{  0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
+			{  0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
+			{  0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
+			{ -0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
+			{ -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
 
 			// Back face (Normal: 0, 0, -1)
-			{ -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  0, 255,   0, 255 },
-			{  0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  0, 255,   0, 255 },
-			{  0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  0, 255,   0, 255 },
-			{  0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  0, 255,   0, 255 },
-			{ -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  0, 255,   0, 255 },
-			{ -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  0, 255,   0, 255 },
+			{ -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
+			{  0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
+			{  0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
+			{  0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
+			{ -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
+			{ -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
 
 			// Left face (Normal: -1, 0, 0)
-			{ -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 0,   0, 255, 255 },
-			{ -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0,   0, 255, 255 },
-			{ -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0,   0, 255, 255 },
-			{ -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0,   0, 255, 255 },
-			{ -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 0,   0, 255, 255 },
-			{ -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, 0,   0, 255, 255 },
+			{ -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
+			{ -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
+			{ -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
+			{ -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
+			{ -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
+			{ -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
 
 			// Right face (Normal: 1, 0, 0)
-			{  0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 255, 255,   0, 255 },
-			{  0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 255, 255,   0, 255 },
-			{  0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 255, 255,   0, 255 },
-			{  0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 255, 255,   0, 255 },
-			{  0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 255, 255,   0, 255 },
-			{  0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 255, 255,   0, 255 },
+			{  0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
+			{  0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
+			{  0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
+			{  0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
+			{  0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
+			{  0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
 
 			// Top face (Normal: 0, 1, 0)
-			{ -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  0, 255, 255, 255 },
-			{ -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,  0, 255, 255, 255 },
-			{  0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,  0, 255, 255, 255 },
-			{  0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,  0, 255, 255, 255 },
-			{  0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  0, 255, 255, 255 },
-			{ -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  0, 255, 255, 255 },
+			{ -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
+			{ -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
+			{  0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
+			{  0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
+			{  0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
+			{ -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
 
 			// Bottom face (Normal: 0, -1, 0)
-			{ -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 255,   0, 255, 255 },
-			{  0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 255,   0, 255, 255 },
-			{  0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 255,   0, 255, 255 },
-			{  0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 255,   0, 255, 255 },
-			{ -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, 255,   0, 255, 255 },
-			{ -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 255,   0, 255, 255 }
+			{ -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
+			{  0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
+			{  0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
+			{  0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
+			{ -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
+			{ -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha }
 		};
 
 		Renderer_PushVertices(&renderer, cube, 36);
-
-
 		// Sphere properties
 		glm::vec3 sphereCenter = {1.0f, 1.0f, 0.0f};
 		float sphereRadius = 1.0f;
@@ -240,15 +112,20 @@ int main()
 		int stackCount = 18;
 		glm::u8vec4 sphereColor = {255, 0, 0, 255/2};
 
-		// CreateSphereMesh(&renderer, sphereCenter, sphereRadius, sectorCount, stackCount, sphereColor);
-		// CreateSphereMesh(&renderer, {-0.5f, 1.0f, 0.0f}, sphereRadius, sectorCount, stackCount, {255, 255, 0, 255/2});
-		// CreateSphereMesh(&renderer, {0.0f, 1.0f, 1.0f}, sphereRadius, sectorCount, stackCount, {0, 255, 255, 255/2});
-		// CreateSphereMesh(&renderer, {0.0f, 2.0f, 0.0f}, sphereRadius, sectorCount, stackCount, {0, 255, 0, 255/2});
+		DrawSphere(&renderer, sphereCenter, sphereRadius, sectorCount, stackCount, sphereColor);
+		DrawSphere(&renderer, {0,0,0}, sphereRadius, sectorCount, stackCount, {255, 255, 0, 255/4});
+		DrawSphere(&renderer, {0.0f, 1.0f, 1.0f}, sphereRadius, sectorCount, stackCount, {0, 255, 255, 255/2});
+		DrawSphere(&renderer, {0.0f, 2.0f, 0.0f}, sphereRadius, sectorCount, stackCount, {0, 255, 0, 255/2});
 		
 		ImGui::Begin("Settings");
+		// ImFontAtlas* atlas = ImGui::GetIO().Fonts;
+		// ImGui::ShowFontAtlas(atlas);
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+		ImGui::SliderInt("Text Size", &textSize, 1, 50);
+		ImGui::SliderInt("alpha", &alpha, 0, 255);
 		ImGui::DragFloat3("Light Position", glm::value_ptr(lightPos), 0.1f);
-		ImGui::DragFloat3("Light Color", glm::value_ptr(lightColor), 0.01f, 0.0f, 1.0f);
+		ImGui::ColorEdit3("Light Color", glm::value_ptr(lightColor));
+		ImGui::ColorEdit3("Background Color", glm::value_ptr(backgroundColor));
 		ImGui::Checkbox("Wireframe", &wireFrame);
 		if (fabsf(projection - 0.5f) < 0.1f) projection = 0.5f;
 		ImGui::SliderFloat("Projection", &projection, 0.0f, 1.0f);

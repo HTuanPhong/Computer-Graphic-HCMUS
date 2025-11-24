@@ -77,7 +77,9 @@ void SendCameraMatrix(Camera* camera, GLuint shaderID, const char* uniform, floa
         
         projection = mixMat4(orthoMatrix, obliqueMatrix, lerpT);
     }
-
+    camera->camRight = glm::vec3(view[0][0], view[1][0], view[2][0]);
+    camera->camUp = glm::vec3(view[0][1], view[1][1], view[2][1]);
+    camera->camFront = glm::vec3(view[0][2], view[1][2], view[2][2]);
     glm::mat4 camMatrix = projection * view;
     glUniformMatrix4fv(glGetUniformLocation(shaderID, uniform), 1, GL_FALSE, glm::value_ptr(camMatrix));
 }
@@ -128,7 +130,7 @@ void ProcessOrbitCamera(Camera* camera, GLFWwindow* window)
 void ProcessOrbitZoom(Camera* camera, float yoffset)
 {
     camera->distance -= yoffset * camera->zoomSpeed;
-    if (camera->distance < 1.0f)  camera->distance = 1.0f;
+    if (camera->distance < 0.1f)  camera->distance = 0.1f;
     if (camera->distance > 50.0f) camera->distance = 50.0f;
 
     // update position after zoom change
