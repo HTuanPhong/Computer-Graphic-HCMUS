@@ -2,13 +2,13 @@
 #include"imgui_impl_glfw.h"
 #include"imgui_impl_opengl3.h"
 
-#include<iostream>
-#include<glad/glad.h>
-#include<GLFW/glfw3.h>
+#include <iostream>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include<vector>
+#include <vector>
 
 #include "App.hpp"
 #include "Render.hpp"
@@ -34,6 +34,15 @@ int main()
 	glm::vec3 backgroundColor(1.0f, 1.0f, 1.0f);
 	int textSize = 14;
 	int alpha = 255;
+
+	// In your main setup
+	DrawEntities myScene;
+
+	// Add some default data
+	// myScene.points.push_back({ {0,0,0}, "Origin" });
+	// myScene.points.push_back({ {0,5,0}, "Top" });
+	// myScene.points.push_back({ {2,0,0}, "Right" });
+	// myScene.cylinders.push_back({ 0, 2, 1 }); // Index 0, 2, 1
 	// Main while loop
 	while (AppRunning())
 	{
@@ -45,78 +54,29 @@ int main()
 		else {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
-		DrawText(&renderer, &g_app.camera, "A", {-0.5f,-0.5f,-0.5f}, textSize, {0,0,0,255});
-		DrawText(&renderer, &g_app.camera, "B", {0.5f,-0.5f,-0.5f}, textSize, {0,0,0,255});
-		DrawText(&renderer, &g_app.camera, "C", {0.5f,-0.5f,0.5f}, textSize, {0,0,0,255});
-		DrawText(&renderer, &g_app.camera, "D", {-0.5f,-0.5f,0.5f}, textSize, {0,0,0,255});
-		DrawText(&renderer, &g_app.camera, "A'", {-0.5f,0.5f,-0.5f}, textSize, {0,0,0,255});
-		DrawText(&renderer, &g_app.camera, "B'", {0.5f,0.5f,-0.5f}, textSize, {0,0,0,255});
-		DrawText(&renderer, &g_app.camera, "C'", {0.5f,0.5f,0.5f}, textSize, {0,0,0,255});
-		DrawText(&renderer, &g_app.camera, "D'", {-0.5f,0.5f,0.5f}, textSize, {0,0,0,255});
-		ImVec2 white = ImGui::GetFontTexUvWhitePixel();
-		Vertex cube[] = {
-			// Front face (Normal: 0, 0, 1)
-			{ -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
-			{  0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
-			{  0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
-			{  0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
-			{ -0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
-			{ -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, white.x,white.y,255,   0,   0, alpha },
+		// DrawLine(&renderer, {0,0,0}, {0,0,1},{0,0,0,255}, 0.01, 0.05, 0.02);
+		// DrawRay(&renderer, {1,0,0}, {1,0,1},{0,0,0,255}, 0.01, 0.05, 0.02);
+		// DrawSphere(&renderer, &g_app.camera, {0,0,0}, {0,0,1}, 32, 32, {100,50,100,50}, 
+    //             {0,0,0,255}, 0.01, 0.05, 0.02);
+		// DrawCircle(&renderer, {0,0,0}, {0,0,1}, {0,1,0}, 64, {200,0,200,255}, {0,0,0,255}, 0.01, 0.05, 0.02);
+		// DrawCylinder(&renderer, &g_app.camera,
+    //               {0,0,0}, {0,2,0}, {2,0,0}, 
+    //               64, {100,0,100,50},
+    //               {0,0,0,255}, 0.01, 0.05, 0.02);
+		// DrawCone(&renderer, &g_app.camera,
+		// 					{0,0,0}, {0,2,0}, {2,0,0}, 
+		// 					64, {100,0,100,50},
+		// 					{0,0,0,255}, 0.01, 0.05, 0.02);
 
-			// Back face (Normal: 0, 0, -1)
-			{ -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
-			{  0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
-			{  0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
-			{  0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
-			{ -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
-			{ -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,  white.x,white.y,0, 255,   0, alpha },
+		// std::vector<glm::vec3> points = {{-4.9,1.08,0}, {-0.87,-3.3,0}, {4.7,-0.04,0}, {1.35,2.98,0}, {-0.93,0.68,0}};
+		// DrawSurface(&renderer, points.data(), points.size(), {200,0,200,255}, {0,0,0,255}, 0.01, 0.05, 0.02);
+		// DrawPlane(&renderer, {-4.9,1.08,0}, {-0.87,-3.3,0}, {4.7,-0.04,0}, {200,0,200,40});
+		// 1. Logic / UI
+    DrawGeometryEditor(myScene);
 
-			// Left face (Normal: -1, 0, 0)
-			{ -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
-			{ -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
-			{ -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
-			{ -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
-			{ -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
-			{ -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f, white.x,white.y,0,   0, 255, alpha },
+    // 2. Render 3D Scene
+    RenderScene(&renderer, &g_app.camera, myScene);
 
-			// Right face (Normal: 1, 0, 0)
-			{  0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
-			{  0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
-			{  0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
-			{  0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
-			{  0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
-			{  0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, white.x,white.y,255, 255,   0, alpha },
-
-			// Top face (Normal: 0, 1, 0)
-			{ -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
-			{ -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
-			{  0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
-			{  0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
-			{  0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
-			{ -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  white.x,white.y,0, 255, 255, alpha },
-
-			// Bottom face (Normal: 0, -1, 0)
-			{ -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
-			{  0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
-			{  0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
-			{  0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
-			{ -0.5f, -0.5f,  0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha },
-			{ -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, white.x,white.y,255,   0, 255, alpha }
-		};
-
-		Renderer_PushVertices(&renderer, cube, 36);
-		// Sphere properties
-		glm::vec3 sphereCenter = {1.0f, 1.0f, 0.0f};
-		float sphereRadius = 1.0f;
-		int sectorCount = 36;
-		int stackCount = 18;
-		glm::u8vec4 sphereColor = {255, 0, 0, 255/2};
-
-		DrawSphere(&renderer, sphereCenter, sphereRadius, sectorCount, stackCount, sphereColor);
-		DrawSphere(&renderer, {0,0,0}, sphereRadius, sectorCount, stackCount, {255, 255, 0, 255/4});
-		DrawSphere(&renderer, {0.0f, 1.0f, 1.0f}, sphereRadius, sectorCount, stackCount, {0, 255, 255, 255/2});
-		DrawSphere(&renderer, {0.0f, 2.0f, 0.0f}, sphereRadius, sectorCount, stackCount, {0, 255, 0, 255/2});
-		
 		ImGui::Begin("Settings");
 		// ImFontAtlas* atlas = ImGui::GetIO().Fonts;
 		// ImGui::ShowFontAtlas(atlas);

@@ -1,11 +1,13 @@
 #include "Render.hpp"
 #include "Shader.hpp"
 #include "imgui.h"
+
 bool Renderer_Init(Renderer* r, size_t initialVertexCap)
 {
   r->capacity = initialVertexCap;
   r->opaqueBuf.reserve(initialVertexCap);
   r->transparentBuf.reserve(initialVertexCap);
+  r->hiddenBuf.reserve(initialVertexCap);
 
   glGenVertexArrays(1, &r->vao);
   glBindVertexArray(r->vao);
@@ -47,6 +49,7 @@ void Renderer_Destroy(Renderer* r)
   r->capacity = 0;
   r->opaqueBuf.clear();
   r->transparentBuf.clear();
+  r->hiddenBuf.clear();
 }
 
 void Renderer_Begin(Renderer* r, glm::vec3 backgroundColor)
@@ -72,15 +75,21 @@ void Renderer_Begin(Renderer* r, glm::vec3 backgroundColor)
 
   r->opaqueBuf.clear();
   r->transparentBuf.clear();
+  r->hiddenBuf.clear();
 }
 
 void Renderer_PushVertex(Renderer* r, Vertex v)
 {
     if (v.a == 255) {
         r->opaqueBuf.push_back(v);
-    } else if (v.a >= 20) {
+    } else if (v.a >= 0) {
         r->transparentBuf.push_back(v);
     }
+}
+
+void Renderer_PushHiddenVertex(Renderer* r, Vertex v)
+{
+    r->hiddenBuf.push_back(v);
 }
 
 void Renderer_PushVertices(Renderer* r, const Vertex* verts, size_t count)
@@ -138,70 +147,74 @@ static void DrawTransparentBuffer(Renderer* r) {
 
 void Renderer_Flush(Renderer* r)
 {
-  // Draw all OPAQUE objects
-  // Writes to depth and color buffers.
+  // 1. Draw OPAQUE objects
   glDepthMask(GL_TRUE);
   glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
   glDisable(GL_BLEND);
-  glCullFace(GL_BACK); // Normal culling for solid objects
-  glDisable(GL_CULL_FACE);
+  // glDisable(GL_CULL_FACE);
+  glEnable(GL_CULL_FACE); 
+  glCullFace(GL_BACK);
   DrawBuffer(r, r->opaqueBuf);
 
-  // If there's nothing transparent, we're done.
-  if (r->transparentBuf.empty()) {
-    glBindVertexArray(0);
-    glUseProgram(0);
-    return;
+  // 2. Draw TRANSPARENT objects (If any)
+  if (!r->transparentBuf.empty()) {
+      glDepthMask(GL_FALSE);    
+      glEnable(GL_BLEND);       
+      glEnable(GL_CULL_FACE);   
+      DrawTransparentBuffer(r); 
+      glDepthMask(GL_TRUE);     
+      
+      glEnable(GL_CULL_FACE);   
+      glDisable(GL_BLEND);      
+      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); 
+      glCullFace(GL_FRONT);     
+      DrawBuffer(r, r->transparentBuf);
+      glDisable(GL_CULL_FACE);  
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); 
+      
+      glDepthMask(GL_FALSE);    
+      glEnable(GL_BLEND);       
+      glEnable(GL_CULL_FACE);   
+      DrawTransparentBuffer(r); 
+      glDepthMask(GL_TRUE);     
+      
+      glEnable(GL_CULL_FACE);   
+      glDisable(GL_BLEND);      
+      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); 
+      glCullFace(GL_BACK);     
+      DrawBuffer(r, r->transparentBuf);
+      glDisable(GL_CULL_FACE);  
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); 
+      
+      glDepthMask(GL_FALSE);    
+      glEnable(GL_BLEND);       
+      glEnable(GL_CULL_FACE);   
+      DrawTransparentBuffer(r); 
+      glDepthMask(GL_TRUE);     
   }
   
-  glDepthMask(GL_FALSE);    //disable depth mask
-  glEnable(GL_BLEND);       //enable blending
-  glEnable(GL_CULL_FACE);   //enable culling
-  DrawTransparentBuffer(r); //draw transparent
-  glDepthMask(GL_TRUE);     //enable depth mask
-  
-  glEnable(GL_CULL_FACE);   //enable culling
-  glDisable(GL_BLEND);      //disable blending
-  glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); //set color mask false
-  glCullFace(GL_FRONT);     //cull face front
-  DrawBuffer(r, r->transparentBuf);
-  glDisable(GL_CULL_FACE);  //disable culling
-  glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); //set color mask
-  
-  glDepthMask(GL_FALSE);    //disable depth mask
-  glEnable(GL_BLEND);       //enable blending
-  glEnable(GL_CULL_FACE);   //enable culling
-  DrawTransparentBuffer(r); //draw transparent
-  glDepthMask(GL_TRUE);     //enable depth mask
-  
-  glEnable(GL_CULL_FACE);   //enable culling
-  glDisable(GL_BLEND);      //disable blending
-  glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); //set color mask false
-  glCullFace(GL_BACK);     //cull face back
-  DrawBuffer(r, r->transparentBuf);
-  glDisable(GL_CULL_FACE);  //disable culling
-  glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); //set color mask
-  
-  glDepthMask(GL_FALSE);    //disable depth mask
-  glEnable(GL_BLEND);       //enable blending
-  glEnable(GL_CULL_FACE);   //enable culling
-  DrawTransparentBuffer(r); //draw transparent
-  glDepthMask(GL_TRUE);     //enable depth mask
-  
+  // 3. Draw HIDDEN objects (Opaque, but drawn last)
+  if (!r->hiddenBuf.empty()) {
+      glDepthMask(GL_TRUE);
+      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      glDisable(GL_BLEND);
+      glDisable(GL_CULL_FACE);
+      
+      DrawBuffer(r, r->hiddenBuf);
+  }
+
   glBindVertexArray(0);
   glUseProgram(0);
 }
 
 void Renderer_End(Renderer* r, glm::vec3 camPos, glm::vec3 lightPos, glm::vec3 lightColor)
 {
-  // Get uniform locations
   GLint viewPosLoc = glGetUniformLocation(r->shaderProgram, "viewPos");
   GLint lightPosLoc = glGetUniformLocation(r->shaderProgram, "lightPos");
   GLint lightColorLoc = glGetUniformLocation(r->shaderProgram, "lightColor");
 
-  // Send uniform data to the shader
   glUniform3fv(viewPosLoc, 1, glm::value_ptr(camPos));
   glUniform3fv(lightPosLoc, 1, glm::value_ptr(lightPos));
-  glUniform3fv(lightColorLoc, 1, glm::value_ptr(lightColor)); // White light
+  glUniform3fv(lightColorLoc, 1, glm::value_ptr(lightColor)); 
   Renderer_Flush(r);
 }

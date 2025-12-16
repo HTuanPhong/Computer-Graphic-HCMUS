@@ -21,6 +21,7 @@ struct Renderer {
   size_t capacity;
   std::vector<Vertex> opaqueBuf; 
   std::vector<Vertex> transparentBuf;
+  std::vector<Vertex> hiddenBuf;
   GLuint shaderProgram;
 };
 
@@ -29,6 +30,7 @@ void Renderer_Destroy(Renderer* r);
 void Renderer_Begin(Renderer* r, glm::vec3 backgroundColor);
 void Renderer_PushVertices(Renderer* r, const Vertex* verts, size_t count);
 void Renderer_PushVertex(Renderer* r, Vertex v);
+void Renderer_PushHiddenVertex(Renderer* r, Vertex v);
 void Renderer_Flush(Renderer* r);
 void Renderer_End(Renderer* r, glm::vec3 camPos, glm::vec3 lightPos, glm::vec3 lightColor);
 

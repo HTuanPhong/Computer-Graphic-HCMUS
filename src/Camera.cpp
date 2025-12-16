@@ -35,6 +35,7 @@ static glm::mat4 mixMat4(const glm::mat4& a, const glm::mat4& b, float t)
 
 void SendCameraMatrix(Camera* camera, GLuint shaderID, const char* uniform, float t)
 {
+    if (camera->width == 0 || camera->height == 0) return;
     t = glm::clamp(t, 0.0f, 1.0f);
     glm::mat4 view = glm::lookAt(camera->position, camera->target, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 projection;

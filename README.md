@@ -1,6 +1,8 @@
 # Computer graphic project for drawing 3D shapes to aid learning 3D geometry.
 
-Some images here hopefully.
+![alt text](image.png)
+
+![alt text](image-1.png)
 
 # Steps to build:
 

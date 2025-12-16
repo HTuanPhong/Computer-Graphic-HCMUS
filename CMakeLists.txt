@@ -37,11 +37,12 @@ include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
 file(GLOB SOURCES "src/*.cpp")
 set(TARGET_NAME cg)
 add_executable(${TARGET_NAME} ${SOURCES} ${LIB_SOURCES} ${GLAD_SOURCES})
-if(WIN32)
+if(WIN32 AND MSVC)
     target_link_options(${TARGET_NAME} PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup)
 endif()
 target_link_libraries(${TARGET_NAME} PRIVATE glm glfw)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 
 # copy target
 add_custom_target(
