@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>HCMUS - Computer Graphics</title>
+  <style>
+    body {
+      font-family: arial;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+    }
+
+    canvas {
+      display: block;
+      border: 1px solid #ccc;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100vh;
+      display: block;
+    }
+
+    #status {
+      display: none;
+    }
+
+    #progress {
+      height: 20px;
+      width: 300px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+  <div id="status">
+    <div id="statustitle">Initializing...</div>
+    <div id="statusprogress">
+      <progress id="progress" value="0" max="100"></progress>
+    </div>
+  </div>
+
+  <script async type="text/javascript" src="app.js"></script>
+  <script>
+    // Handle console output
+    Module = {
+      canvas: (function () {
+        return document.getElementById('canvas');
+      })(),
+      // WebGL context attributes to fix white-wash issues
+      glContextAttributes: {
+        alpha: false,                    // Canvas is opaque, not transparent
+        premultipliedAlpha: false,       // Expect straight alpha, not premultiplied
+        depth: true,                     // Enable depth buffer
+        stencil: false,
+        antialias: true,
+        preserveDrawingBuffer: false
+      },
+      setStatus: function (text) {
+        if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+        if (text === Module.setStatus.last.text) return;
+        var m = text.match(/([^(]+)\((\d+(?:\.\d+)?)\/(\d+)\)/);
+        var now = Date.now();
+        if (m && now - Module.setStatus.last.time < 30) return; // if progress update, skip one frame
+        Module.setStatus.last.time = now;
+        Module.setStatus.last.text = text;
+        if (m) {
+          text = m[1];
+          var progressElement = document.getElementById('progress');
+          progressElement.value = parseInt(m[2]) * 100 / parseInt(m[3]);
+          progressElement.hidden = false;
+          document.getElementById('statustitle').innerHTML = text;
+        } else {
+          document.getElementById('statusprogress').hidden = true;
+          document.getElementById('statustitle').innerHTML = text;
+        }
+        if (text == '') {
+          document.getElementById('status').style.display = 'none';
+          if (Module.setStatus.last.text) {
+            var m = text.match(/([^(]+)\((\d+(?:\.\d+)?)\/(\d+)\)/);
+            if (m) {
+              document.getElementById('statustitle').innerHTML = 'Downloading...';
+            }
+          }
+        }
+      },
+      monitorRunDependencies: function (left) {
+        this.monitorRunDependencies = function () { };
+        if (left > 0)
+          Module.setStatus('Downloading...');
+      }
+    };
+    window.onerror = function () {
+      Module.setStatus = function (x) {
+        console.log("status: " + x);
+      };
+    };
+  </script>
+</body>
+
+</html>

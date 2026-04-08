@@ -1,4 +1,6 @@
-#version 330 core
+#version 300 es
+precision highp float;
+
 out vec4 FragColor;
 
 in vec3 FragPos;
@@ -14,11 +16,12 @@ uniform sampler2D textTexture;
 void main()
 {
     vec4 sampled = texture(textTexture, TexCoord);
-    if (sampled.a == 0) {
+    if (sampled.a == 0.0) {
         discard;
     }
-    // Ambient
-    float ambientStrength = 0.3;
+    
+    // Ambient - reduced strength for more realistic lighting
+    float ambientStrength = 0.15;
     vec3 ambient = ambientStrength * lightColor;
 
     // Diffuse
@@ -28,13 +31,15 @@ void main()
     vec3 diffuse = diff * lightColor;
 
     // Specular
-    float specularStrength = 1;
+    float specularStrength = 0.5;
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
     vec3 specular = specularStrength * spec * lightColor;
 
-    vec3 ambientAndDiffuse = (ambient + diffuse) * VertexColor.rgb * sampled.rgb;
-    vec3 result = ambientAndDiffuse + specular;
+    // Combine colors: apply ambient+diffuse to texture, then add specular and vertex color
+    vec3 texColor = sampled.rgb * VertexColor.rgb;
+    vec3 result = (ambient + diffuse) * texColor + specular;
+    
     FragColor = vec4(result, VertexColor.a * sampled.a);
 }

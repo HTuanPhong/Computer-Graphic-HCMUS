@@ -25,3 +25,6 @@ Sphere, Cylinder, Cone
 The game style camera was a failure go back to orbit camera!
 
 Maybe camera inside app is not good idea but no reason to not right now.
+
+
+main_web.cpp is fucked must remove bloat then reimplement download and load file.

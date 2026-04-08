@@ -17,6 +17,8 @@ Camera CreateOrbitCamera(glm::vec3 target, float distance, int width, int height
     cam.width = width;
     cam.height = height;
     cam.firstClick = true;
+    cam.lastMouseX = 0.0;
+    cam.lastMouseY = 0.0;
 
     // calculate initial position
     float yawRad = glm::radians(cam.yaw);
@@ -93,18 +95,26 @@ void ProcessOrbitCamera(Camera* camera, GLFWwindow* window)
 
         if (camera->firstClick)
         {
-            glfwSetCursorPos(window, camera->width / 2.0, camera->height / 2.0);
+            // store initial position on first click
+            glfwGetCursorPos(window, &camera->lastMouseX, &camera->lastMouseY);
             camera->firstClick = false;
+            return; // skip first frame to avoid large delta
         }
 
         double mouseX, mouseY;
         glfwGetCursorPos(window, &mouseX, &mouseY);
 
-        float deltaX = (float)(mouseX - camera->width / 2.0);
-        float deltaY = (float)(mouseY - camera->height / 2.0);
+        // Compute delta from last frame (not from screen center)
+        // This works better in browsers where cursor repositioning is restricted
+        float deltaX = (float)(mouseX - camera->lastMouseX);
+        float deltaY = (float)(mouseY - camera->lastMouseY);
 
-        camera->yaw   -= deltaX * camera->sensitivity;
-        camera->pitch += deltaY * camera->sensitivity;
+        // Dead zone: ignore small movements to prevent unwanted spinning
+        const float DEADZONE = 0.5f;
+        if (glm::abs(deltaX) > DEADZONE || glm::abs(deltaY) > DEADZONE) {
+            camera->yaw   -= deltaX * camera->sensitivity;
+            camera->pitch += deltaY * camera->sensitivity;
+        }
 
         // limit pitch to avoid flipping
         if (camera->pitch > 89.0f) camera->pitch = 89.0f;
@@ -118,8 +128,9 @@ void ProcessOrbitCamera(Camera* camera, GLFWwindow* window)
         camera->position.y = camera->target.y + camera->distance * sinf(pitchRad);
         camera->position.z = camera->target.z + camera->distance * cosf(pitchRad) * cosf(yawRad);
 
-        // recenter cursor
-        glfwSetCursorPos(window, camera->width / 2.0, camera->height / 2.0);
+        // update last mouse position for next frame
+        camera->lastMouseX = mouseX;
+        camera->lastMouseY = mouseY;
     }
     else
     {

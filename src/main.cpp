@@ -81,8 +81,6 @@ int main()
 		// ImFontAtlas* atlas = ImGui::GetIO().Fonts;
 		// ImGui::ShowFontAtlas(atlas);
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		ImGui::SliderInt("Text Size", &textSize, 1, 50);
-		ImGui::SliderInt("alpha", &alpha, 0, 255);
 		ImGui::DragFloat3("Light Position", glm::value_ptr(lightPos), 0.1f);
 		ImGui::ColorEdit3("Light Color", glm::value_ptr(lightColor));
 		ImGui::ColorEdit3("Background Color", glm::value_ptr(backgroundColor));

@@ -1,4 +1,6 @@
-#version 330 core
+#version 300 es
+precision highp float;
+
 layout (location = 0) in vec3 aPos;     // Vertex position in world space
 layout (location = 1) in vec3 aNormal;  // Vertex normal
 layout (location = 2) in vec2 aTexCoord;// Vertex texture coordinates
