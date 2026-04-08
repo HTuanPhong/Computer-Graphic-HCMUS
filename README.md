@@ -1,5 +1,7 @@
 # Computer graphic project for drawing 3D shapes to aid learning 3D geometry.
 
+Try it out: https://htuanphong.github.io/Computer-Graphic-HCMUS/
+
 ![alt text](image.png)
 
 ![alt text](image-1.png)
